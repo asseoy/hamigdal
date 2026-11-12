@@ -20,9 +20,9 @@ export function rng(seed) {             // mulberry32
 
 // ---------- persistent save ----------
 const KEY = 'hamigdal.v1';
-export const save = { maxFloor: 1, best: 0, settings: { sens: 1, sfx: 0.8, music: 0.45, quality: 2, invert: false } };
+export const save = { maxFloor: 1, best: 0, settings: { sens: 1, sfx: 0.8, music: 0.45, quality: 2, invert: false, autoCam: true } };
 export function loadSave() {
-  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); Object.assign(save, s); save.settings = Object.assign({ sens: 1, sfx: 0.8, music: 0.45, quality: 2, invert: false }, s.settings || {}); } catch (e) {}
+  try { const s = JSON.parse(localStorage.getItem(KEY) || '{}'); Object.assign(save, s); save.settings = Object.assign({ sens: 1, sfx: 0.8, music: 0.45, quality: 2, invert: false, autoCam: true }, s.settings || {}); } catch (e) {}
   return save;
 }
 export function writeSave() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }

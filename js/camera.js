@@ -7,7 +7,27 @@ export function createCamera() {
   const cam = G.camera;
   const C = { yaw: Math.PI, pitch: 0.2, dist: 4.7, curDist: 4.7, target: new THREE.Vector3(), shake: 0, roll: 0, fov: 70, tiltT: 0 };
   G.cam = C;
-  C.snap = () => { const P = G.player; C.target.set(P.pos.x, P.pos.y + 1.45, P.pos.z); C.yaw = P.yaw + Math.PI; C.curDist = C.dist; };
+  // ---- automatic camera: always look along the course, so no mouse is needed ----
+  const path = [];
+  { const D = G.data, add = (x, y, z) => { const l = path[path.length - 1]; if (!l || Math.hypot(l.x - x, l.z - z) + Math.abs(l.y - y) > 0.6) path.push({ x, y, z }); };
+    for (const fl of D.floors) {
+      add(fl.x, fl.y, fl.z);
+      for (const sg of D.segs) { if (sg.floor !== fl.floor) continue;
+        for (const p of sg.way) { const top = p.y + p.h / 2;
+          if (p.d > 3.2) { const ax = Math.sin(p.yaw), az = Math.cos(p.yaw), k = p.d / 2 - 0.5; add(p.x - ax * k, top, p.z - az * k); add(p.x + ax * k, top, p.z + az * k); } else add(p.x, top, p.z); }
+        add(sg.end.x, sg.end.y, sg.end.z); }
+    }
+    add(D.summit.x, D.summit.y, D.summit.z); }
+  let idx = 0, manualT = 0;
+  const near = (lo, hi) => { const P = G.player.pos; let best = 1e9, bi = idx; for (let i = Math.max(0, lo); i < Math.min(path.length, hi); i++) { const q = path[i], d = Math.hypot(q.x - P.x, q.z - P.z) + Math.abs(q.y - P.y) * 2.5; if (d < best) { best = d; bi = i; } } return bi; };
+  function autoYaw() {
+    const P = G.player.pos; idx = near(idx - 12, idx + 14);
+    let j = idx + 1; while (j < path.length - 1 && Math.hypot(path[j].x - P.x, path[j].z - P.z) < 5 && j < idx + 6) j++;
+    const q = path[Math.min(j, path.length - 1)], dx = q.x - P.x, dz = q.z - P.z;
+    if (Math.hypot(dx, dz) < 1) return null;
+    return Math.atan2(dx, dz) + Math.PI;
+  }
+  C.snap = () => { const P = G.player; C.target.set(P.pos.x, P.pos.y + 1.45, P.pos.z); idx = near(0, path.length); const a = save.settings.autoCam !== false ? autoYaw() : null; C.yaw = a != null ? a : P.yaw + Math.PI; C.curDist = C.dist; manualT = 0; };
 
   C.update = (dt) => {
     const P = G.player, s = save.settings;
@@ -16,8 +36,11 @@ export function createCamera() {
     C.pitch = clamp(C.pitch, -0.95, 1.2);
     C.dist = clamp(C.dist + input.wheel * 0.5, 2.8, 10);
 
-    // gentle auto-follow behind the runner when moving and not touching the mouse
-    if (Math.abs(input.mx) < 0.5 && P.speedH > 6 && (P.state === 'wallrun' || P.state === 'rope')) C.yaw = dampAng(C.yaw, P.yaw + Math.PI, 1.6, dt);
+    if (Math.abs(input.mx) + Math.abs(input.my) > 1) manualT = 2.5; else manualT = Math.max(0, manualT - dt);
+    if (save.settings.autoCam !== false && manualT <= 0) {
+      const a = autoYaw(); if (a != null) C.yaw = dampAng(C.yaw, a, P.state === 'wallrun' ? 1.2 : 2.4, dt);
+      C.pitch = damp(C.pitch, 0.22, 2, dt);
+    } else if (save.settings.autoCam !== false) idx = near(idx - 12, idx + 14);
 
     const ty = P.state === 'rope' ? P.pos.y + 1.2 : P.pos.y + 1.45;
     C.target.x = damp(C.target.x, P.pos.x, 18, dt); C.target.z = damp(C.target.z, P.pos.z, 18, dt);

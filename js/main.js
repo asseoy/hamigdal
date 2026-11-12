@@ -91,7 +91,7 @@ async function boot() {
     S.cp = f; S.startFloor = f; S.time = 0; S.timing = true; S.fullRun = full; S.won = false;
     placeAt(f); G.running = true; G.paused = false; show(null);
     canvas.requestPointerLock && canvas.requestPointerLock();
-    if (f === 1) hint('W A S D – תנועה · רווח – קפיצה (פעמיים = סלטה) · עכבר – מצלמה', 7000);
+    if (f === 1) hint('W – קדימה במסלול · A D – הצידה · רווח – קפיצה (פעמיים = סלטה)', 7000);
     toast(f === 1 ? 'שבט הנשיא' : 'קומה ' + f, f === 1 ? 'המגדל' : ZONES[zoneOf(f)].name, 2000);
   }
   function setPause(v) {
@@ -108,14 +108,14 @@ async function boot() {
   $('btnHelp').onclick = () => show('help');
   const openSettings = from => {
     backTo = from; const s = save.settings;
-    $('sSens').value = s.sens; $('sSfx').value = s.sfx; $('sMusic').value = s.music; $('sQuality').value = s.quality; $('sInvert').checked = s.invert;
+    $('sSens').value = s.sens; $('sSfx').value = s.sfx; $('sMusic').value = s.music; $('sQuality').value = s.quality; $('sInvert').checked = s.invert; $('sAuto').checked = s.autoCam !== false;
     show('settings');
   };
   $('btnSettings').onclick = () => openSettings('menu');
   $('btnPSettings').onclick = () => openSettings('pause');
-  const onSet = () => { const s = save.settings; s.sens = +$('sSens').value; s.sfx = +$('sSfx').value; s.music = +$('sMusic').value; s.invert = $('sInvert').checked;
+  const onSet = () => { const s = save.settings; s.sens = +$('sSens').value; s.sfx = +$('sSfx').value; s.music = +$('sMusic').value; s.invert = $('sInvert').checked; s.autoCam = $('sAuto').checked;
     const q = +$('sQuality').value; if (q !== s.quality) { s.quality = q; applyQuality(); } writeSave(); audio.volumes(); };
-  ['sSens', 'sSfx', 'sMusic', 'sQuality', 'sInvert'].forEach(id => $(id).addEventListener('input', onSet));
+  ['sSens', 'sSfx', 'sMusic', 'sQuality', 'sInvert', 'sAuto'].forEach(id => $(id).addEventListener('input', onSet));
   document.querySelectorAll('.back').forEach(b => b.onclick = () => show(b.closest('#settings') ? backTo : 'menu'));
   $('btnResume').onclick = () => setPause(false);
   $('btnRespawn').onclick = () => { setPause(false); respawn(); };
