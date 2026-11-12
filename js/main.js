@@ -9,6 +9,7 @@ import { buildLevel } from './level.js';
 import { createSky } from './sky.js';
 import { createFx } from './fx.js';
 import { createAudio } from './audio.js';
+const safeLock = el => { try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
 
 const $ = id => document.getElementById(id);
 const showErr = m => { const e = $('err'); e.classList.remove('hidden'); e.textContent += m + '\n'; };
@@ -90,13 +91,13 @@ async function boot() {
     audio.start();
     S.cp = f; S.startFloor = f; S.time = 0; S.timing = true; S.fullRun = full; S.won = false;
     placeAt(f); G.running = true; G.paused = false; show(null);
-    canvas.requestPointerLock && canvas.requestPointerLock();
+    safeLock(canvas);
     if (f === 1) hint('W – קדימה במסלול · A D – הצידה · רווח – קפיצה (פעמיים = סלטה)', 7000);
     toast(f === 1 ? 'שבט הנשיא' : 'קומה ' + f, f === 1 ? 'המגדל' : ZONES[zoneOf(f)].name, 2000);
   }
   function setPause(v) {
     if (!G.running) return;
-    G.paused = v; if (v) { show('pause'); document.exitPointerLock && document.exitPointerLock(); } else { show(null); canvas.requestPointerLock && canvas.requestPointerLock(); }
+    G.paused = v; if (v) { show('pause'); document.exitPointerLock && document.exitPointerLock(); } else { show(null); safeLock(canvas); }
   }
   $('btnPlay').onclick = () => start(1, true);
   $('btnContinue').onclick = () => start(save.maxFloor, false);

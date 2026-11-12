@@ -1,5 +1,6 @@
 // Keyboard + mouse (pointer lock). Edge flags are cleared at end of each frame.
 import { G } from './ctx.js';
+const safeLock = el => { try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
 
 export const input = { f: 0, s: 0, jump: false, jumpPressed: false, jumpReleased: false, slide: false, slidePressed: false,
   respawnPressed: false, mx: 0, my: 0, wheel: 0, locked: false, keys: {} };
@@ -16,7 +17,7 @@ export function initInput(canvas, onPause) {
   });
   addEventListener('keyup', e => { k[e.code] = false; if (e.code === 'Space') input.jumpReleased = true; });
   addEventListener('blur', () => { for (const c in k) k[c] = false; if (G.running && !G.paused) onPause(true); });
-  canvas.addEventListener('mousedown', () => { if (G.running && !G.paused && !input.locked) canvas.requestPointerLock && canvas.requestPointerLock(); });
+  canvas.addEventListener('mousedown', () => { if (G.running && !G.paused && !input.locked) safeLock(canvas); });
   document.addEventListener('pointerlockchange', () => {
     input.locked = document.pointerLockElement === canvas;
     if (!input.locked && G.running && !G.paused && !G.dev) onPause(true);
