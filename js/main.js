@@ -66,7 +66,7 @@ async function boot() {
     if (S.fullRun) { if (!save.best || S.time < save.best) { txt += ' שיא חדש!'; save.best = S.time; } else txt += ' השיא שלך: ' + fmt(save.best) + '.'; }
     else txt += ' (התחלת מקומה ' + S.startFloor + ', לכן הזמן לא נכנס לשיא.)';
     save.maxFloor = FLOORS; writeSave();
-    setTimeout(() => { $('winText').textContent = txt; show('win'); G.running = false; document.exitPointerLock && document.exitPointerLock(); }, 2200);
+    setTimeout(() => { if (!S.won || !G.running) return; $('winText').textContent = txt; show('win'); G.running = false; document.exitPointerLock && document.exitPointerLock(); }, 2200);
   };
   function respawn() {
     if (S.respawning) return; S.respawning = 1; G.sfx('respawn');
@@ -130,7 +130,8 @@ async function boot() {
   let last = performance.now(), fpsAcc = 0, fpsN = 0, slow = 0, menuT = 0;
   const camMenu = new THREE.Vector3();
   function step(dt) {
-    G.t += dt;
+    const frozen = G.running && G.paused;                // paused: the world stops too (planks, movers, ropes)
+    if (!frozen) G.t += dt;
     if (G.bot) G.bot(dt);
     pollInput();
     if (G.running && !G.paused) {
@@ -144,9 +145,10 @@ async function boot() {
       }
       if (S.timing) S.time += dt;
       if (P.pos.y < floors[S.cp - 1].y - 16 && !S.respawning) respawn();
+      else if (S.cp > 1 && P.grounded && P.ground && P.ground.tags.ground && !S.respawning) respawn();   // fell to the camp from a low floor
       G.rig.update(dt);
       G.cam.update(dt);
-    } else {
+    } else if (!frozen) {
       L.update(dt); P.update(0); G.rig.update(dt);
       if (!G.running) {                                     // menu: slow orbit around the tower base
         menuT += dt * 0.06; const fl = floors[0];
