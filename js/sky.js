@@ -86,9 +86,9 @@ export function createSky() {
     G.zoneBlend = { zi, t, f };
   };
   K.applyQuality = (q) => {
-    const size = q >= 2 ? 2048 : q === 1 ? 1536 : 1024;
+    const size = G.touch ? (q >= 2 ? 1024 : 512) : q >= 2 ? 2048 : q === 1 ? 1536 : 1024;
     if (sun.shadow.mapSize.x !== size) { sun.shadow.mapSize.set(size, size); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
-    sun.castShadow = true;
+    sun.castShadow = !(G.touch && q === 0);
   };
   G.sky = K;
   return K;

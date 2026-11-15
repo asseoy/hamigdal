@@ -1,6 +1,7 @@
 // Keyboard + mouse (pointer lock). Edge flags are cleared at end of each frame.
 import { G } from './ctx.js';
-const safeLock = el => { try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
+import { initTouch, pollTouch } from './touch.js';
+const safeLock = el => { if (G.touch) return; try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
 
 export const input = { f: 0, s: 0, jump: false, jumpPressed: false, jumpReleased: false, slide: false, slidePressed: false,
   respawnPressed: false, mx: 0, my: 0, wheel: 0, locked: false, keys: {} };
@@ -20,10 +21,11 @@ export function initInput(canvas, onPause) {
   canvas.addEventListener('mousedown', () => { if (G.running && !G.paused && !input.locked) safeLock(canvas); });
   document.addEventListener('pointerlockchange', () => {
     input.locked = document.pointerLockElement === canvas;
-    if (!input.locked && G.running && !G.paused && !G.dev) onPause(true);
+    if (!input.locked && G.running && !G.paused && !G.dev && !G.touch) onPause(true);
   });
   addEventListener('mousemove', e => { if (input.locked || G.dev) { input.mx += e.movementX || 0; input.my += e.movementY || 0; } });
   addEventListener('wheel', e => { input.wheel += Math.sign(e.deltaY); }, { passive: true });
+  initTouch(input, onPause);
 }
 
 export function pollInput() {
@@ -33,6 +35,7 @@ export function pollInput() {
     input.s = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0);
     input.jump = !!k.Space;
     input.slide = !!(k.ShiftLeft || k.ShiftRight || k.KeyC);
+    if (G.touch) pollTouch(input);
   }
 }
 export function endFrameInput() {

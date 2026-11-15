@@ -9,7 +9,8 @@ import { buildLevel } from './level.js';
 import { createSky } from './sky.js';
 import { createFx } from './fx.js';
 import { createAudio } from './audio.js';
-const safeLock = el => { try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
+import { onTouchActivate } from './touch.js';
+const safeLock = el => { if (G.touch) return; try { const r = el && el.requestPointerLock && el.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } catch (e) {} };
 
 const $ = id => document.getElementById(id);
 const showErr = m => { const e = $('err'); e.classList.remove('hidden'); e.textContent += m + '\n'; };
@@ -38,6 +39,7 @@ async function boot() {
   initInput(canvas, setPause);
   resize(); addEventListener('resize', resize);
   applyQuality();
+  onTouchActivate(applyQuality);              // phones/tablets: lighter rendering
 
   // ---------------- game state ----------------
   const L = G.level, P = G.player, floors = L.floors;
@@ -92,7 +94,7 @@ async function boot() {
     S.cp = f; S.startFloor = f; S.time = 0; S.timing = true; S.fullRun = full; S.won = false;
     placeAt(f); G.running = true; G.paused = false; show(null);
     safeLock(canvas);
-    if (f === 1) hint('W – קדימה במסלול · A D – הצידה · רווח – קפיצה (פעמיים = סלטה)', 7000);
+    if (f === 1) hint(G.touch ? 'מקל – תנועה · קפיצה כפולה = סלטה · גרירה – מצלמה' : 'W – קדימה במסלול · A D – הצידה · רווח – קפיצה (פעמיים = סלטה)', 7000);
     toast(f === 1 ? 'שבט הנשיא' : 'קומה ' + f, f === 1 ? 'המגדל' : ZONES[zoneOf(f)].name, 2000);
   }
   function setPause(v) {
@@ -186,7 +188,8 @@ function resize() {
 }
 function applyQuality() {
   const q = save.settings.quality, dpr = devicePixelRatio || 1;
-  G.renderer.setPixelRatio(q >= 2 ? Math.min(dpr, 2) : q === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1));
+  if (G.touch) G.renderer.setPixelRatio(Math.min(dpr, q >= 2 ? 1.25 : q === 1 ? 1.1 : 0.9));
+  else G.renderer.setPixelRatio(q >= 2 ? Math.min(dpr, 2) : q === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1));
   G.sky && G.sky.applyQuality(q);
   resize();
 }
